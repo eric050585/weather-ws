@@ -1,11 +1,10 @@
-{ 
-  "build": { 
-    "builder": "node:18", 
-    "start": "node server.js" 
-  }, 
-  "deploy": { 
-    "env": { 
-      "PORT": "8080" 
-    } 
-  } 
-} 
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install",
+    "startCommand": "node server.js"
+  },
+  "deploy": {
+    "startCommand": "node server.js"
+  }
+}
