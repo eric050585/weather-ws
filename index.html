@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP Weather Dashboard</title>
+
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 20px; min-height: 100vh;
+    transition: background 0.7s ease;
+    background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80') no-repeat center center fixed;
+    background-size: cover;
+    overflow-x: hidden;
+  }
+  h1 { text-align: center; color: #fff; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); font-size: 36px; margin: 20px 0 10px 0; font-weight: 600; }
+  .settings {
+    position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px); padding: 12px 18px; border-radius: 12px; color: #fff; font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000;
+  }
+  .settings label { display: block; margin-bottom: 5px; font-size: 13px; }
+  .settings select { padding: 6px 10px; border-radius: 6px; border: none; outline: none; font-weight: 600; cursor: pointer; background: #fff; color: #333; }
+  .status {
+    position: fixed; top: 20px; left: 20px; padding: 12px 18px; border-radius: 12px; color: #fff; font-weight: 600;
+    backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; font-size: 14px;
+  }
+  .status.connected { background: rgba(34, 197, 94, 0.8); }
+  .status.disconnected { background: rgba(239, 68, 68, 0.8); }
+  .dashboard {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
+    margin-top: 80px; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 10px;
+  }
+  .card {
+    background: rgba(255,255,255,0.18); backdrop-filter: blur(12px); padding: 25px; border-radius: 16px; color: #fff;
+    text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 25px rgba(0,0,0,0.35); }
+  .card h2 { font-size: 16px; margin: 10px 0 15px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card p { font-size: 24px; font-weight: 700; margin: 8px 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+  .icon { font-size: 48px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+  .battery { font-size: 2rem; display: flex; flex-direction: column; align-items: center; }
+  .timestamp {
+    text-align: center; margin-top: 25px; color: #fff; font-weight: 600; font-size: 16px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    padding: 10px; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); border-radius: 10px; display: inline-block; margin-left: 50%; transform: translateX(-50%);
+  }
+  @media (max-width: 768px) {
+    .dashboard { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 100px; }
+    h1 { font-size: 28px; margin-top: 80px; }
+    .settings, .status { font-size: 12px; padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⛅ Weather Station Dashboard</h1>
+
+<div class="settings">
+  <label>Background Theme:</label>
+  <select id="bgSelect">
+    <option value="blue">☀️ Blue Sky</option>
+    <option value="grass">🌿 Grass Field</option>
+    <option value="river">🌊 River</option>
+    <option value="mountain">🏔️ Mountain</option>
+  </select>
+</div>
+
+<div class="status disconnected" id="wsStatus">❌ Disconnected</div>
+
+<div class="dashboard">
+  <div class="card"><div class="icon" id="luxIcon">☀️</div><h2>Light Level</h2><p id="lux">--</p></div>
+  <div class="card"><div class="icon">🌡️</div><h2>Temperature</h2><p id="temperature">-- °C</p></div>
+  <div class="card"><div class="icon">💧</div><h2>Humidity</h2><p id="humidity">-- %</p></div>
+  <div class="card"><div class="icon">🔥</div><h2>Heat Index</h2><p id="heat_index">-- °C</p></div>
+  <div class="card"><div class="icon">📊</div><h2>Pressure</h2><p id="pressure">-- hPa</p></div>
+  <div class="card"><div class="icon">🌱</div><h2>Soil Temp</h2><p id="soil_temp">-- °C</p></div>
+  <div class="card"><div class="icon">💦</div><h2>Soil Moisture</h2><p id="soil_moisture">-- %</p></div>
+  <div class="card"><div class="icon">💨</div><h2>Wind Speed</h2><p id="wind_speed">-- m/s</p></div>
+  <div class="card"><div class="icon">🧭</div><h2>Wind Direction</h2><p id="wind_direction">-- °</p></div>
+  <div class="card"><div class="icon">☀️</div><h2>Solar Radiation</h2><p id="solar_radiation">-- W/m²</p></div>
+  <div class="card"><div class="icon">🌧️</div><h2>Rain Gauge</h2><p id="rain">-- mm</p></div>
+  <div class="card"><div class="battery" id="batteryCard"><div id="batteryIcon" title="Battery level">🔋</div><h2>Battery</h2><p id="battery_percent">--%</p></div></div>
+</div>
+
+<p class="timestamp" id="lastUpdate">⏱️ Last Update: --</p>
+
+<script>
+document.getElementById("bgSelect").addEventListener("change", (e) => {
+  const bg = e.target.value;
+  const backgrounds = {
+    blue: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1400&q=80",
+    grass: "https://images.unsplash.com/photo-1508780709619-79562169bc64?auto=format&fit=crop&w=1400&q=80",
+    river: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+    mountain: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1400&q=80"
+  };
+  document.body.style.background = `url('${backgrounds[bg]}') no-repeat center center fixed`;
+  document.body.style.backgroundSize = "cover";
+});
+
+// ✅ WebSocket client (dynamic for cloud)
+const WS_URL = location.origin.replace(/^http/, 'ws');
+let ws;
+
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+  const statusEl = document.getElementById("wsStatus");
+  const lastUpdateEl = document.getElementById("lastUpdate");
+
+  ws.onopen = () => {
+    console.log("✅ WebSocket Connected");
+    statusEl.textContent = "✅ Connected";
+    statusEl.classList.remove("disconnected");
+    statusEl.classList.add("connected");
+    ws.send("DASHBOARD_READY");
+  };
+
+  ws.onclose = () => {
+    console.log("❌ WebSocket Disconnected. Retrying in 3s...");
+    statusEl.textContent = "❌ Disconnected";
+    statusEl.classList.remove("connected");
+    statusEl.classList.add("disconnected");
+    setTimeout(connectWS, 3000);
+  };
+
+  ws.onmessage = (evt) => {
+    try {
+      const data = JSON.parse(evt.data);
+      const now = new Date();
+      lastUpdateEl.textContent = "⏱️ Last Update: " + now.toLocaleString();
+
+      document.getElementById("lux").textContent = (data.lux ?? "--") + " lux";
+      document.getElementById("luxIcon").textContent =
+        data.lux > 8000 ? "☀️" :
+        data.lux > 3000 ? "🌤️" :
+        data.lux > 500  ? "⛅" :
+        data.lux > 0    ? "☁️" : "🌙";
+
+      document.getElementById("temperature").textContent = (data.temperature ?? "--") + " °C";
+      document.getElementById("humidity").textContent = (data.humidity ?? "--") + " %";
+      document.getElementById("heat_index").textContent = (data.heat_index ?? "--") + " °C";
+      document.getElementById("pressure").textContent = (data.pressure ?? "--") + " hPa";
+      document.getElementById("soil_temp").textContent = (data.soil_temp ?? "--") + " °C";
+      document.getElementById("soil_moisture").textContent = (data.soil_moisture ?? "--") + " %";
+      document.getElementById("wind_speed").textContent = (data.wind_speed ?? "--") + " m/s";
+      document.getElementById("wind_direction").textContent = (data.wind_direction ?? "--") + "°";
+      document.getElementById("solar_radiation").textContent = (data.solar_radiation ?? "--") + " W/m²";
+      document.getElementById("rain").textContent = (data.rain_mm ?? 0) + " mm";
+
+      const batt = data.battery_percent ?? 0;
+      let icon = "🔋";
+      if (batt > 75) icon = "🟩";
+      else if (batt > 50) icon = "🟨";
+      else if (batt > 25) icon = "🟧";
+      else icon = "🟥";
+
+      document.getElementById("battery_percent").textContent = batt + "%";
+      const batteryIcon = document.getElementById("batteryIcon");
+      batteryIcon.textContent = icon;
+      batteryIcon.title = `Battery: ${batt}%`;
+
+    } catch(e) {
+      console.error("❌ Error parsing data:", e);
+    }
+  };
+
+  ws.onerror = (err) => {
+    console.error("❌ WebSocket error:", err);
+  };
+}
+
+connectWS();
+</script>
+
+</body>
+</html>
