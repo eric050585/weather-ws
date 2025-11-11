@@ -3,16 +3,16 @@ const { WebSocketServer } = require('ws');
 
 const app = express();
 
-// ✅ Dynamic port for Railway
+//  Dynamic port for Railway
 const PORT = process.env.PORT || 8080;
 
 app.use(express.static('public'));
 
 const server = app.listen(PORT, () => {
-  console.log(`✅ HTTP Server running on port ${PORT}`);
+  console.log(` HTTP Server running on port ${PORT}`);
 });
 
-// ✅ WebSocket server
+//  WebSocket server
 const wss = new WebSocketServer({ server });
 
 // Track dashboard clients
@@ -31,7 +31,7 @@ wss.on('connection', (ws, req) => {
     req.socket.remoteAddress ||
     'unknown';
 
-  console.log(`✅ Client connected from ${clientIP}`);
+  console.log(` Client connected from ${clientIP}`);
 
   let isDashboard = false;
 
@@ -65,26 +65,27 @@ wss.on('connection', (ws, req) => {
       if (sent > 0) {
         console.log(`📤 Sent to ${sent} dashboard(s)`);
       } else {
-        console.log("⚠️ No dashboards connected");
+        console.log(" No dashboards connected");
       }
     } catch (err) {
-      console.error("❌ Invalid JSON from ESP32:", err.message);
+      console.error(" Invalid JSON from ESP32:", err.message);
     }
   });
 
   ws.on('close', () => {
     if (isDashboard) {
       dashboards.delete(ws);
-      console.log(`❌ Dashboard disconnected → remaining: ${dashboards.size}`);
+      console.log(` Dashboard disconnected → remaining: ${dashboards.size}`);
     } else {
-      console.log("❌ ESP32 disconnected");
+      console.log(" ESP32 disconnected");
     }
   });
 
   ws.on('error', (err) => {
-    console.error("❌ WebSocket Error:", err.message);
+    console.error(" WebSocket Error:", err.message);
   });
 });
 
 console.log("🔌 WebSocket Server ready");
 console.log("📁 Serving /public folder");
+
