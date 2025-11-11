@@ -103,6 +103,7 @@ document.getElementById("bgSelect").addEventListener("change", (e) => {
 //  WebSocket client (dynamic for cloud)
 const WS_URL = location.origin.replace(/^http/, 'ws');
 let ws;
+//const WS_URL = "ws://192.168.1.108:8080";
 
 function connectWS() {
   ws = new WebSocket(WS_URL);
@@ -110,16 +111,16 @@ function connectWS() {
   const lastUpdateEl = document.getElementById("lastUpdate");
 
   ws.onopen = () => {
-    console.log(" WebSocket Connected");
-    statusEl.textContent = " Connected";
+    console.log("✅ WebSocket Connected");
+    statusEl.textContent = "✅ Connected";
     statusEl.classList.remove("disconnected");
     statusEl.classList.add("connected");
     ws.send("DASHBOARD_READY");
   };
 
   ws.onclose = () => {
-    console.log(" WebSocket Disconnected. Retrying in 3s...");
-    statusEl.textContent = " Disconnected";
+    console.log("❌ WebSocket Disconnected. Retrying in 3s...");
+    statusEl.textContent = "❌ Disconnected";
     statusEl.classList.remove("connected");
     statusEl.classList.add("disconnected");
     setTimeout(connectWS, 3000);
@@ -162,12 +163,12 @@ function connectWS() {
       batteryIcon.title = `Battery: ${batt}%`;
 
     } catch(e) {
-      console.error(" Error parsing data:", e);
+      console.error("❌ Error parsing data:", e);
     }
   };
 
   ws.onerror = (err) => {
-    console.error(" WebSocket error:", err);
+    console.error("❌ WebSocket error:", err);
   };
 }
 
@@ -176,4 +177,3 @@ connectWS();
 
 </body>
 </html>
-
